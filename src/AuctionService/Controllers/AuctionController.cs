@@ -5,6 +5,7 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Contracts;
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,10 +53,12 @@ public class AuctionController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult<AuctionDto>> CreateAuction(CreateAuctionDto createAuctionDto)
     {
         var auction = _mapper.Map<Auction>(createAuctionDto);
-        auction.Seller = "test";
+
+        auction.Seller = User.Identity.Name;
 
         _context.Auctions.Add(auction);
 
@@ -72,6 +75,7 @@ public class AuctionController : ControllerBase
 
 
     [HttpPut("{id}")]
+    [Authorize]
     public async Task<ActionResult> UpdateAuction(Guid id, [FromBody] UpdateAuctionDto updateAuctionDto)
     {
         var auction = await _context.Auctions
@@ -80,6 +84,8 @@ public class AuctionController : ControllerBase
 
         if (auction is null) return NotFound();
 
+        if (!string.Equals(auction.Seller, User.Identity.Name)) return Forbid();
+        
         auction.Item.Make = updateAuctionDto.Make ?? auction.Item.Make;
         auction.Item.Model = updateAuctionDto.Model ?? auction.Item.Model;
         auction.Item.Color = updateAuctionDto.Color ?? auction.Item.Color;
@@ -96,21 +102,23 @@ public class AuctionController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<ActionResult> DeleteAuction(Guid id)
     {
         var auction = await _context.Auctions.FindAsync(id);
 
         if (auction is null) return NotFound();
 
-        // TODO: check seller == username
+        if (!string.Equals(auction.Seller, User.Identity.Name)) return Forbid();
+        
         _context.Auctions.Remove(auction);
 
         await _publishEndpoint.Publish<AuctionDeleted>(new { Id = auction.Id.ToString() });
-            
+
         var result = await _context.SaveChangesAsync() > 0;
 
         if (!result) return BadRequest("Could not update BD");
 
         return Ok();
     }
-}           
+}
