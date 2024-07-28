@@ -23,4 +23,6 @@ public class Auction
     public Status Status { get; set; } = Status.Live;
 
     public Item Item { get; set; }
+
+    public bool HasReservePrice() => ReservePrice > 0;
 }
