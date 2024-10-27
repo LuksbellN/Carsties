@@ -1,5 +1,6 @@
 using AuctionService.Consumers;
 using AuctionService.Data;
+using AuctionService.Services;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +31,7 @@ builder.Services.AddMassTransit(x =>
 
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("auction"));
 
-    x.UsingRabbitMq((context, cfg) =>
+    x.UsingRabbitMq((context, cfg) =>   
     {
         cfg.Host(builder.Configuration["RabbitMq:Host"], "/", host =>
         {
@@ -38,6 +39,13 @@ builder.Services.AddMassTransit(x =>
             host.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
         });
         
+        cfg.ReceiveEndpoint("auction-bid-placed", e =>
+        {
+            e.UseMessageRetry(r => r.Interval(5, 5));
+
+            e.ConfigureConsumer<BidPlacedConsumer>(context);
+        });     
+            
         cfg.ConfigureEndpoints(context);
     });
 });
@@ -53,6 +61,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 
 builder.Services.AddScoped<IAuctionRepository, AuctionRepository>();
+builder.Services.AddGrpc();
 
 var app = builder.Build();
 
@@ -60,6 +69,7 @@ var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapGrpcService<GrpcAuctionService>();       
 
 try
 {

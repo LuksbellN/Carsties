@@ -1,0 +1,7 @@
+#!/bin/bash
+
+rm ~/.docker/config.json
+sudo systemctl enable --now docker.service
+pass init 1E3AE7328351C8EB588F17E6D5470DEEBC3068C5
+docker context use desktop-linux
+docker login
