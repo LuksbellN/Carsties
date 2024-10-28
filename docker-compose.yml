@@ -36,13 +36,13 @@ services:
       - Kestrel__Endpoints__Grpc__Protocols=Http2
       - Kestrel__Endpoints__Grpc__Url=http://+:7777
       - Kestrel__Endpoints__WebApi__Protocols=Http1
-      - Kestrel__Endpoints__WebApi__Url=http://+:80   
+      - Kestrel__Endpoints__WebApi__Url=http://+:80
     ports:
       - 7001:80
       - 7777:7777
     depends_on:
       - rabbitmq
-      - postgres  
+      - postgres
   search-svc:
     image: luksbell/search-svc:latest
     build:
@@ -68,10 +68,10 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:80
       - ConnectionStrings__DefaultConnection=Server=postgres; User Id=postgres; Password=postgrespw; Database=identity
-    ports:  
+    ports:
       - 5001:80
     depends_on:
-      - postgres  
+      - postgres
   gateway-svc:
     image: luksbell/gateway-svc:latest
     build:
@@ -100,4 +100,16 @@ services:
     depends_on:
       - rabbitmq
       - mongodb
-        
+  notify-svc:
+    image: luksbell/notify-svc:latest
+    build:
+      context: .
+      dockerfile: src/NotificationService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - RabbitMq__Host=rabbitmq
+    ports:
+      - 7004:80
+    depends_on:
+      - rabbitmq    
