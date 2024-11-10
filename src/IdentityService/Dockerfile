@@ -20,7 +20,7 @@ RUN dotnet restore Carsties.sln
 
 # copy the app folders over
 COPY src/IdentityService src/IdentityService
-WORKDIR /app/src/IdentityService
+WORKDIR /app/src/IdentityService            
 RUN dotnet publish -c Release -o /app/src/out
 
 # Build runtime image
